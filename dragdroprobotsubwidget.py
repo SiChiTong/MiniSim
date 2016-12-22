@@ -276,6 +276,12 @@ class DragDropRobotWidget(QtGui.QGraphicsView):
         self.setBackgroundBrush(QtGui.QColor(230, 200, 167))
         
 
+class DragDropRobotDockWidget(QtGui.QDockWidget):
+    def __init__(self, parent = None):
+        super(DragDropRobotDockWidget, self).__init__("Drag and Drop Workspace", parent)
+        self.m_dragDropRobotWidget = DragDropRobotWidget(self)
+        self.setWidget(self.m_dragDropRobotWidget)
+
 
 if __name__== '__main__':
 

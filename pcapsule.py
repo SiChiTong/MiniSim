@@ -11,8 +11,8 @@ from pobject import PObject
 import ode
 
 class PCapsule(PObject):
-    def __init__(self, x, y, z, radius, length, mass, r, g, b):
-        super(PCapsule, self).__init__(x, y, z, r, g, b, mass) #?
+    def __init__(self, x, y, z, R, radius, length, mass, r, g, b):
+        super(PCapsule, self).__init__(x, y, z, R, r, g, b, mass) #?
         self.m_radius = radius
         self.m_length = length
     

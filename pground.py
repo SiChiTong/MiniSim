@@ -9,7 +9,7 @@ import ode
 
 class PGround(PObject):
     def __init__(self):
-        super(PGround, self).__init__(0, 0, 0, 0, 1, 0, 0) #?
+        super(PGround, self).__init__(0, 0, 0, (1, 0, 0, 0, 1, 0, 0, 0, 1), 0, 1, 0, 0) #?
         
     def init(self):
         self.m_geom = ode.GeomPlane(self.m_space_ID, 0, 0, 1, 0)

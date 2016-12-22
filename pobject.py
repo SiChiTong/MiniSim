@@ -7,11 +7,12 @@ from ode_graphics import CGraphics
 #OpenGL list []
 
 class PObject(object):
-    def __init__(self, x, y, z, red, green, blue, mass):
+    def __init__(self, x, y, z, R, red, green, blue, mass):
         #shown in the class and its heritance 
         self.m_x = x
         self.m_y = y
         self.m_z = z
+        self.m_R = R
         self.m_red = red
         self.m_green = green
         self.m_blue = blue
@@ -29,7 +30,7 @@ class PObject(object):
         self.m_tag = 0
         self.m_ID = 0
 
-    def _calcRotMatrix(axis, angle):
+    def calcRotMatrix(axis, angle):
         """
         Return the row-major 3x3 rotation matrix defining a rotation around axis
         by angle.
@@ -53,6 +54,8 @@ class PObject(object):
         self.m_body_ID.setPosition((self.m_x, self.m_y, self.m_z))
         if ( self.m_isQSet == True): 
             self.m_body_ID.setQuaternion(self.m_q) 
+        else:
+            self.m_body_ID.setRotation(self.m_R)
             
     def initPosGeom(self):
         self.m_geom.setPosition((self.m_x, self.m_y, self.m_z))
@@ -79,7 +82,7 @@ class PObject(object):
             self.m_q = (x_axis, y_axis, z_axis, ang) #??
             self.m_body_ID.setQuaternion(self.m_q)
         else:
-            self.m_local_Rot =  self._calcRotMatrix((x_axis, y_axis, z_axis), ang) #??
+            self.m_local_Rot =  self.calcRotMatrix((x_axis, y_axis, z_axis), ang) #??
     
     def setBodyRotation_2(self, rot):
         self.m_body_ID.setRotation(rot)
@@ -100,10 +103,13 @@ class PObject(object):
     def getBodyDirection(self, x, y, z):
         pass
 
-    def getBodyRotation_2(self, local = False):
+    def getBodyRotation(self, local = False):
         if (local == True):
-            r = []
-            for k in range(12):
+            r = (0, 0, 0, 0,
+                 0, 0, 0, 0,
+                 0, 0, 0, 0)
+                 
+            for k in range(9):
                 r[k] = self.m_local_Rot[k]
                 return r
         else:

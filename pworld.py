@@ -46,7 +46,7 @@ class PWorld(QObject):
         self.m_objects.append(o)
     
     def initAllObjects(self):
-        self.m_objects_count =  len(self.m_objects)
+        self.m_objects_count =  len(self.m_objects)            
         #surface
 
     #@ param o1 o2 the PObjects created in the World (Vector)    

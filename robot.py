@@ -254,8 +254,8 @@ class Robot:
                                             self.bkwdAxis, 
                                             -0.1 * math.pi, 
                                             0.2 * math.pi)
-                                            
-                                             
+        print self.m_chest.getBodyPosition()
+        print self.m_chest.getBodyRotation()
 
 
     def _addBody(self, p1, p2, radius):
@@ -263,17 +263,33 @@ class Robot:
         Adds a capsule body between joint positions p1 and p2 and with given
         radius to the ragdoll.
         """
-        p1 = Geometry.add3(p1, self.m_offset)
-        p2 = Geometry.add3(p2, self.m_offset)
+        #p1 = Geometry.add3(p1, self.m_offset)
+        #p2 = Geometry.add3(p2, self.m_offset)
+
+        # define body rotation automatically from body axis
+        za = Geometry.norm3(Geometry.sub3(p2, p1))
+        
+        if (math.fabs(Geometry.dot3(za, (1.0, 0.0, 0.0))) < 0.7): 
+            xa = (1.0, 0.0, 0.0)
+        else: 
+            xa = (0.0, 1.0, 0.0)
+            
+        ya = Geometry.cross(za, xa)
+        xa = Geometry.norm3(Geometry.cross(ya, za))
+        ya = Geometry.cross(za, xa)
+        rot = (xa[0], ya[0], za[0], xa[1], ya[1], za[1], xa[2], ya[2], za[2])
+
+        tmp = Geometry.add3(Geometry.mul3(Geometry.add3(p1, p2), 0.5), self.m_offset)
 
         # cylinder length not including endcaps, make capsules overlap by half
         #   radius at joints
         cyllen = Geometry.dist3(p1, p2) - radius
 
-        body = PCylinder(0, 0, 0, 10, radius, cyllen, 1, 0, 0)
+        body = PCylinder(tmp[0], tmp[1], tmp[2], rot, radius, cyllen, 10, 1, 0, 0)
         #after all using  init() to add all the parts the pworld
         #Notice: Make sure the pworld is instanced
         self.m_pworld.addObject(body)
+        body.init()
         #body.init() #ToDo: to be called in PWorld                        
         #ToDo
         """
@@ -290,20 +306,12 @@ class Robot:
     speed = 0;
     
         """
-        # define body rotation automatically from body axis
-        za = Geometry.norm3(Geometry.sub3(p2, p1))
-        
-        if (math.fabs(Geometry.dot3(za, (1.0, 0.0, 0.0))) < 0.7): 
-            xa = (1.0, 0.0, 0.0)
-        else: 
-            xa = (0.0, 1.0, 0.0)
-            
-        ya = Geometry.cross(za, xa)
-        xa = Geometry.norm3(Geometry.cross(ya, za))
-        ya = Geometry.cross(za, xa)
-        rot = (xa[0], ya[0], za[0], xa[1], ya[1], za[1], xa[2], ya[2], za[2])
 
-        body.setBodyPosition(Geometry.mul3(Geometry.add3(p1, p2), 0.5))
+
+
+        
+
+        body.setBodyPosition(tmp)
         body.setBodyRotation_2(rot)     #global
 
         self.m_bodies.append(body.m_body_ID)

@@ -11,8 +11,8 @@ from pobject import PObject
 import ode
 
 class PCylinder(PObject):
-    def __init__(self, x, y, z, radius, length, mass, r, g, b):
-        super(PCylinder, self).__init__(x, y, z, r, g, b, mass)
+    def __init__(self, x, y, z, R, radius, length, mass, r, g, b):
+        super(PCylinder, self).__init__(x, y, z, R, r, g, b, mass)
         self.m_radius = radius
         self.m_length = length
     
@@ -24,7 +24,7 @@ class PCylinder(PObject):
         
     def init(self):
         self.m_body_ID = ode.Body(self.m_world_ID)
-        self.initPosBody()
+        self.initPosBody()          #Let ODE know the initial pos,rot of the PCylinder Object
         self.setMass(self.m_mass)
         self.m_geom = ode.GeomCylinder(None, self.m_radius, self.m_length)
         self.m_geom.setBody(self.m_body_ID)
@@ -32,4 +32,4 @@ class PCylinder(PObject):
         
     def draw(self):
         super(PCylinder, self).draw()
-        self.m_cgraphics.drawCylinder(self.m_geom.getPosition(), self.m_geom.getRotation(), self.m_length, self.m_radius)    
+        self.m_cgraphics.drawCylinder(self.m_body_ID.getPosition(), self.m_body_ID.getRotation(), self.m_length, self.m_radius)    

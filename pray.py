@@ -10,7 +10,7 @@ import ode
 
 class PRay(PObject):
     def __init__(self, length):
-        super(PRay, self).__init__(0, 0, 0, 0, 0, 0, 0)
+        super(PRay, self).__init__(0, 0, 0, (1, 0, 0, 0, 1, 0, 0, 0, 1), 0, 0, 0, 0)
         self.m_length = length
             
     def init(self):

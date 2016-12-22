@@ -11,8 +11,8 @@ from pobject import PObject
 import ode
 
 class PBox(PObject):
-    def __init__(self, x, y, z, w, h, l, mass, r, g, b):
-        super(PBox, self).__init__(x, y, z, r, g, b, mass) #?
+    def __init__(self, x, y, z, R, w, h, l, mass, r, g, b):
+        super(PBox, self).__init__(x, y, z, R, r, g, b, mass) #?
         self.m_w = 0.0
         self.m_h = 0.0
         self.m_l = 0.0

@@ -10,10 +10,10 @@ from PyQt4.QtGui import *
 from getpositionwidget import GetPositionWidget
 from dragdroprobotsubwidget import DragDropRobotWidget
 
-class RobotWidget(QDockWidget):   
+class RobotDockWidget(QDockWidget):   
     
     def __init__(self, parent = None):
-        super(RobotWidget, self).__init__("Current Robot", parent)
+        super(RobotDockWidget, self).__init__("Current Robot", parent)
         layout = QGridLayout()
         
         self.m_robotCombo = QComboBox(self)
@@ -62,7 +62,7 @@ class RobotWidget(QDockWidget):
         
 
         
-        self.getPoseWidget = GetPositionWidget()
+        self.m_getPoseWidget = GetPositionWidget()
         self.m_id = 0
         
         
@@ -73,13 +73,14 @@ class RobotWidget(QDockWidget):
         pass
 
     def setPoseBtnClicked(self):
-        self.getPoseWidget.show()
+        self.m_getPoseWidget.show()
         
+
         
 if __name__=='__main__':  
     import sys
     app = QApplication(sys.argv)  
-    widget = RobotWidget()
+    widget = RobotDockWidget()
     #widget.setPicture(QImage('./head.png'))
     widget.show()  
     sys.exit(app.exec_())  

@@ -174,11 +174,14 @@ class CGraphics:
     GROUND_OFSY = 0.5
     SKY_SCALE = 1.0
     SKY_HEIGHT = 1.0
+    
+    
     CAPPED_CYLINDER_QUALITY = 3
     
-    light_ambient = [0, 0, 0, 0]
-    light_diffuse = [0, 0, 0, 0]
-    light_specular = [0, 0, 0, 0]
+    light_ambient = [0.5, 0.5, 0.5, 1.0]
+    light_diffuse = [1.0, 1.0, 1.0, 1.0]
+    light_specular = [1.0, 1.0, 1.0, 1.0]
+    light_position = [LIGHTX, LIGHTY, 1.0, 0.0]
     """ctor"""
     """
      @param owner: QGLWidget based Object which would use the utility to draw the physic
@@ -189,10 +192,8 @@ class CGraphics:
 
         self.m_view_xyz = [0.8317, -0.9817, 0.8000] #view point prop.
         self.m_view_hpr = [121.0000, -27.5000, 0.0000]
-        self.setViewpoint(self.m_view_xyz, self.m_view_hpr)        
-        #self.m_sphere_quality = 0
-
-        self.m_renderDepth = 100
+        
+        self.m_sphere_quality = 0
         self.m_graphicDisabled = False
         
         
@@ -200,6 +201,8 @@ class CGraphics:
         self.m_frustum_right = 0
         self.m_frustum_bottom = 0
         self.m_frustum_vnear = 0
+        self.m_renderDepth = 10000
+        
         self.m_width = 0
         self.m_height = 0        
         
@@ -251,10 +254,42 @@ class CGraphics:
         glEnd()
         
         
-    
+# This is recursively subdivides a triangular area (vertices p1,p2,p3) into
+# smaller triangles, and then draws the triangles. All triangle vertices are
+# normalized to a distance of 1.0 from the origin (p1,p2,p3 are assumed
+# to be already normalized). Note this is not super-fast because it draws
+# triangles rather than triangle strips.    
     def _drawPatch(self, p1, p2, p3, level):
         #A Mmmmmust to be implemented for importing STL
-        pass
+        if (level > 0):
+            q1= [0, 0, 0]
+            q2= [0, 0, 0]
+            q3= [0, 0, 0]
+            for i in range(3):
+                q1[i] = 0.5 * (p1[i] + p2[i])
+                q2[i] = 0.5 * (p2[i] + p3[i])
+                q3[i] = 0.5 * (p3[i] + p1[i])
+            
+            length1 = 1.0 / math.sqrt(q1[0]*q1[0] + q1[1]*q1[1] + q1[2]*q1[2])
+            length2 = 1.0 / math.sqrt(q2[0]*q2[0] + q2[1]*q2[1] + q2[2]*q2[2])
+            length3 = 1.0 / math.sqrt(q3[0]*q3[0] + q3[1]*q3[1] + q3[2]*q3[2])
+            
+            for i in range(3):
+                q1[i] *= length1
+                q2[i] *= length2
+                q3[i] *= length3
+                
+            self._drawPatch(p1, q1, q3, level-1)
+            self._drawPatch(q1, p2, q2, level-1)
+            self._drawPatch(q1, q2, q3, level-1)
+            self._drawPatch(q3, q2, p3, level-1)
+        else:
+            glNormal3f(p1[0], p1[1], p1[2])
+            glVertex3f(p1[0], p1[1], p1[2])
+            glNormal3f(p2[0], p2[1], p2[2])
+            glVertex3f(p2[0], p2[1], p2[2])
+            glNormal3f(p3[0], p3[1], p3[2])
+            glVertex3f(p3[0], p3[1], p3[2])
     
     def _drawSphere(self):
         #A Mmmmmust to be implemented with _drawPatch
@@ -266,8 +301,8 @@ class CGraphics:
         #number of sides to the cylinder (divisible by 4)
         n = self.CAPPED_CYLINDER_QUALITY * 4
         
-        l = l * 0.5
-        a = math.pi * 2.0 / n
+        l *= 0.5
+        a = math.pi * 2.0 / float(n)
         sa = math.sin(a)
         ca = math.cos(a)
         
@@ -275,7 +310,7 @@ class CGraphics:
         ny = 1          #normal vector = (0, ny, mz)
         nz = 0
         glBegin(GL_TRIANGLE_STRIP)
-        for i in range(n):
+        for i in range(n+1):
             glNormal3d(ny, nz, 0)
             glVertex3d(ny * r, nz * r, 1)
             glNormal3d(ny, nz, 0)
@@ -332,8 +367,9 @@ class CGraphics:
             nx2 = start_nx2
             ny2 = start_ny2
             nz2 = 0
+            
             glBegin(GL_TRIANGLE_STRIP)
-            for i in range(n):
+            for i in range(n+1):
                 glNormal3d(ny, nz, nx)
                 glVertex3d(ny * r, nz * r, -l + nx * r)
                 glNormal3d(ny2, nz2, nx2)
@@ -353,36 +389,72 @@ class CGraphics:
 
     def _drawCylinder(self, l, r, zoffset):
         if self.m_graphicDisabled == True: return
-        CAPSULE_SLICES = 16
-        CAPSULE_STACKS = 12
+        n = 24      #number of sides to the cylinder (divisible by 4)
         
-        cylHalfHeight = l / 2.0
+        l *= 0.5
+        a = math.pi * 2.0 / float(n)
+        sa = math.sin(a)
+        ca = math.cos(a)
+        
+        ny = 1.0        #normal vector = [0, ny, nz]
+        nz = 0.0
+        glBegin(GL_TRIANGLE_STRIP)
+        for i in range(n+1):
+            glNormal3d(ny, nz, 0)
+            glVertex3d(ny * r, nz * r, l + zoffset)
+            glNormal3d(ny, nz, 0)
+            glVertex3d(ny * r, nz * r, -l + zoffset)
+            #rotate ny, nz
+            tmp = ca * ny - sa * nz
+            nz = sa * ny + ca * nz
+            ny = tmp
+            
+        glEnd()
 
-        #draw the cylinder body
-        glBegin(GL_QUAD_STRIP)
-        for i in range(0, CAPSULE_SLICES +1):
-            a = float(i) * math.pi * 2.0 / float(CAPSULE_SLICES)
-            sa = math.sin(a)
-            ca = math.cos(a)
-            glNormal3f(ca, sa, 0)
-            glVertex3f(r * ca, r * sa, cylHalfHeight + zoffset)
-            glVertex3f(r * ca, r * sa, -cylHalfHeight + zoffset)
-        glEnd()            
+        #draw top cap
+        glShadeModel(GL_FLAT)
+        ny = 1.0        #normal vector = [0,ny,nz]
+        nz = 0.0
+        
+        glBegin(GL_TRIANGLE_FAN)
+        glNormal3d(0, 0, 1)
+        glVertex3d(0, 0, l + zoffset)
+        for i in range(n+1):
+            glNormal3d(0, 0, 1)
+            glVertex3d(ny * r, nz * r, l + zoffset)
+            #rotate ny, nz
+            tmp = ca * ny - sa * nz
+            nz = sa * ny + ca * nz
+            ny = tmp
+        glEnd()
 
-
-
+        #draw bottom cap
+        ny = 1.0        #normal vector = [0,ny,nz]
+        nz = 0.0
+        
+        glBegin(GL_TRIANGLE_FAN)
+        glNormal3d(0, 0, -1)
+        glVertex3d(0, 0, -l + zoffset)
+        for i in range(n+1):
+            glNormal3d(0, 0, -1)
+            glVertex3d(ny * r, nz * r, -l + zoffset)
+            #rotate ny, nz
+            tmp = ca * ny + sa * nz
+            nz = -sa * ny + ca * nz
+            ny = tmp
+        glEnd()
         
     def _drawCylinder_TopTextured(self, l, r, zoffset, tex_id, robot = False):
         pass
     
     def _wrapCameraAngles(self):
         for i in range(3):
-            while self.m_view_hpr[i] > 180:
-                self.m_view_hpr[i] = self.m_view_hpr[i] - 360
-            while self.m_view_hpr[i] < -180:
-                self.m_view_hpr[i] = self.m_view_hpr[i] - 360
+            while self.m_view_hpr[i] > 180.0:
+                self.m_view_hpr[i] -= 360.0
+            while self.m_view_hpr[i] < -180.0:
+                self.m_view_hpr[i] += 360.0
     
-    def _setCamera(self, x, y, z, h, p, r):
+    def setCamera(self, x, y, z, h, p, r):
         if (self.m_graphicDisabled == True): return
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
@@ -403,28 +475,28 @@ class CGraphics:
         
     def isGraphicsEnabled(self):
         return not(self.m_graphicDisabled)
+        
+    def loadTexture(self, img):
+        if (self.m_graphicDisabled == True):
+            return -1
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, glGenTextures(1))
+        
+        id = self.m_owner.bindTexture(img)
+        
+        self.m_tex_ids.append(id)
+        return len(self.m_tex_ids)-1
     
-   # def loadTexture(self, img):
-   #     if (self.m_graphicDisabled == True):
-   #         return -1
-   #     glEnable(GL_TEXTURE_2D)
-   #     glBindTexture(GL_TEXTURE_2D, glGenTextures(1))
-   #    
-   #     id = self.m_owner.bindTexture(img)
-   #     
-   #     self.m_tex_ids.append(id)
-   #     return len(self.m_tex_ids)-1
-    
-   # def loadTextureSkyBox(self, img):
-   #     if (self.m_graphicDisabled == True):
-   #         return -1
-   #     glEnable(GL_TEXTURE_2D)
-   #     glBindTexture(GL_TEXTURE_2D, glGenTextures(1))
-   #     glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
-   #     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
-   #     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
-   #     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-   #     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+#    def loadTextureSkyBox(self, img):
+#        if (self.m_graphicDisabled == True):
+#            return -1
+#        glEnable(GL_TEXTURE_2D)
+#        glBindTexture(GL_TEXTURE_2D, glGenTextures(1))
+#        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
+#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP)
+#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP)
+#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+#        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
         
     
     def setViewpoint(self, xyz, hpr):
@@ -452,7 +524,7 @@ class CGraphics:
     def getHeight(self):
         return self.m_height
         
-    def renderDepth(self):
+    def getRenderDepth(self):
         return self.m_renderDepth
         
     def setRenderDepth(self, depth):
@@ -470,21 +542,17 @@ class CGraphics:
     def cameraMotion(self, mode, deltax, deltay):
         if (self.m_graphicDisabled == True): return
         side = 0.01 * deltax
-        if mode == 4:
-            fwd = 0.01 * deltay
-        else:
-            fwd = 0.0
+        fwd = 0.01 * deltay
         s = math.sin(self.m_view_hpr[0] * math.pi / 180.0)
         c = math.cos(self.m_view_hpr[0] * math.pi / 180.0)
         
-        if (mode == 1):
-            self.m_view_hpr[0] = self.m_view_hpr[0] + deltax * 0.5
-            self.m_view_hpr[1] = self.m_view_hpr[1] + deltay * 0.5
+        if (mode == 1):         #left/right
+            self.m_view_xyz[0] += deltax * 0.5
+        elif (mode == 2):       #Up/down
+            self.m_view_xyz[1] += deltay * 0.5            
         else:
-            self.m_view_xyz[0] = self.m_view_xyz[0] - s * side + c * fwd
-            self.m_view_xyz[1] = self.m_view_xyz[1] + c * side + s * fwd
-            if (mode == 2 or mode == 5):
-                self.m_view_xyz[2] = self.m_view_xyz[2] + 0.01 * deltay
+            self.m_view_xyz[0] += -s * side + c * fwd
+            self.m_view_xyz[1] +=  c * side + s * fwd
         self._wrapCameraAngles()
     
     def rotxy(self, x, y, a):
@@ -511,9 +579,9 @@ class CGraphics:
         h = self.m_view_hpr[0] * math.pi / 180.0
         p = self.m_view_hpr[1] * math.pi / 180.0
         r = self.m_view_hpr[2] * math.pi / 180.0
-        x = -1
+        x = 0
         y = 0
-        z = 0
+        z = -1
         y, z = self.rotxy(y, z, r)
         z, x = self.rotxy(z, x, -p)
         x, y = self.rotxy(x, y, h)
@@ -533,20 +601,15 @@ class CGraphics:
     
     def zoomCamera(self, dz):
         xx, yy, zz = self.getCameraForward()
-        self.m_view_xyz[0] = self.m_view_xyz[0] + xx * dz
-        self.m_view_xyz[1] = self.m_view_xyz[1] + yy * dz
-        self.m_view_xyz[2] = self.m_view_xyz[2] + zz * dz
-    
-    def driftCamera(self, d):
-        xx, yy, zz = self.getCameraForward()
-        self.m_view_xyz[0] = self.m_view_xyz[0] + xx * d
-        self.m_view_xyz[1] = self.m_view_xyz[1] + yy * d
-        self.m_view_xyz[2] = self.m_view_xyz[2] + zz * d        
+        self.m_view_xyz[0] += xx * dz
+        self.m_view_xyz[1] += yy * dz
+        self.m_view_xyz[2] += zz * dz
+        
         
     def setColor(self, r, g, b, alpha):
         if (self.m_graphicDisabled == True): return
         
-        
+        #class variable
         self.light_ambient[0] = r * 0.3
         self.light_ambient[1] = g * 0.3
         self.light_ambient[2] = b * 0.3
@@ -565,8 +628,8 @@ class CGraphics:
         glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 5.0)
         
     
-    #def setSphereQuality(self, q):
-    #    pass
+    def setSphereQuality(self, q):
+        self.m_sphere_quality = q
     
     def setShadow(self, state):
         pass
@@ -579,7 +642,9 @@ class CGraphics:
     def noTexture(self):
         if (self.m_graphicDisabled == True): return
         glDisable(GL_TEXTURE_2D)
-    
+
+
+    #***********************The most important convertion**************
     def setTransform(self, pos, R):
         if (self.m_graphicDisabled == True): return
         matrix = [0, 0, 0, 0, 
@@ -615,7 +680,6 @@ class CGraphics:
         self.m_height = height
         
         #setup stuff
-        glutInit([])
         glEnable(GL_LIGHTING)
         glEnable(GL_LIGHT0)
         glDisable(GL_TEXTURE_2D)
@@ -630,11 +694,12 @@ class CGraphics:
         
         #setup viewport
         glViewport(0, 0, width, height)
+
+
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         VNEAR = 0.1
         VFAR = self.m_renderDepth
-        VFAR = 1000000000000000000000000000
         K = 1 #view scale, 1 = +/- 45 degrees
         self.m_frustum_vnear = VNEAR
         if ( width > height or width == height):
@@ -649,12 +714,13 @@ class CGraphics:
         glFrustum(-self.m_frustum_right, self.m_frustum_right, -self.m_frustum_bottom,
                   self.m_frustum_bottom, VNEAR, VFAR)
         
+        glutInit([])
+        gluPerspective (45.0, 1.3333, 0.2, 20.0)
+        
         #setup lights It makes a difference whether this is done in the
         #GL_PROJECTION matrix mode(lights are scene relative) or the
         #GL_MODELVIEW matrix mode(lights are camera relative, bad!!)
-        self.light_ambient = [0.5, 0.5, 0.5, 1.0]
-        self.light_diffuse = [1.0, 1.0, 1.0, 1.0]
-        self.light_specular = [1.0, 1.0, 1.0, 1.0]
+
         glLightfv(GL_LIGHT0, GL_AMBIENT, self.light_ambient)
         glLightfv(GL_LIGHT0, GL_DIFFUSE, self.light_diffuse)
         glLightfv(GL_LIGHT0, GL_SPECULAR, self.light_specular)
@@ -677,10 +743,13 @@ class CGraphics:
         
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-        self._setCamera(view2_xyz[0], view2_xyz[1], view2_xyz[2], view2_hpr[0], view2_hpr[1], view2_hpr[2])
+        #***************************************
+        self.setCamera(view2_xyz[0], view2_xyz[1], view2_xyz[2], view2_hpr[0], view2_hpr[1], view2_hpr[2])
+        #gluLookAt(1.5, 4.0, 3.0, 0.5, 1.0, 0.0, 0.0, 1.0, 0.0)
         
-        light_position = [self.LIGHTX, self.LIGHTY, 1.0, 0.0]
-        glLightfv(GL_LIGHT0, GL_POSITION, light_position)
+        
+
+        glLightfv(GL_LIGHT0, GL_POSITION, self.light_position)
         
         if fog:
             fogColor = [fogr, fogg, fogb, 1]
@@ -693,7 +762,7 @@ class CGraphics:
     def finalizeScene(self):
         pass
     
-    #???
+    
     def resetState(self):
         if self.m_graphicDisabled == True: return
         glEnable(GL_LIGHTING)
@@ -712,9 +781,9 @@ class CGraphics:
         glLoadIdentity()
         glRotatef(90, 0, 0, 1)
         glRotatef(90, 0, 1, 0)
-        glRotatef(view_hpr[2], 1, 0, 0)
-        glRotatef(view_hpr[1], 0, 1, 0)
-        glRotatef(view_hpr[0], 0, 0, 1)
+        glRotatef(self.m_view_hpr[2], 1, 0, 0)
+        glRotatef(self.m_view_hpr[1], 0, 1, 0)
+        glRotatef(self.m_view_hpr[0], 0, 0, 1)
         glScalef(self.m_renderDepth, self.m_renderDepth, self.m_renderDepth)
         
         #Enable/Disable features
@@ -723,6 +792,8 @@ class CGraphics:
         glShadeModel(GL_FLAT)
         glDisable(GL_LIGHTING)
         glDisable(GL_LIGHT0)
+        glDisable(GL_BLEND)
+        glDisable(GL_CULL_FACE)
         
         #Just in case we set all vertices to white
         glColor4f(1, 1, 1, 1)
@@ -751,7 +822,7 @@ class CGraphics:
         glTexCoord2f(1, 1)
         glVertex3f(0.5 * r, 0.5, 0.5 * r)
         glTexCoord2f(0, 1)
-        glVertex3f(-0.5 * r, 0.5, -0.5 * r)
+        glVertex3f(-0.5 * r, 0.5, 0.5 * r)
         glEnd()
         
         #pos_x/left
@@ -833,7 +904,7 @@ class CGraphics:
         glDepthFunc(GL_LESS)
         glDepthRange(0, 1)
         
-        resetState()
+        self.resetState()
         
     def drawGround(self):
         if (self.m_graphicDisabled == True): return
@@ -915,7 +986,7 @@ class CGraphics:
         nz = 0
         glBegin(GL_TRIANGLE_FAN)
         glNormal3d(0, 0, 1)
-        for i in range(3):
+        for i in range(n+1):
             glNormal3d(0, 0, 1)
             glVertex3d(ny * r + x0, nz * r + y0, z0)
             #rotate ny, nz

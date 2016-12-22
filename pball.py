@@ -10,7 +10,7 @@ import ode
 
 class PBall(PObject):
     def __init__(self, x, y, z, radius, mass, r, g, b):
-        super(PBall, self).__init__(x, y, z, r, g, b, mass) #?
+        super(PBall, self).__init__(x, y, z, (1, 0, 0, 0, 1, 0, 0, 0, 1), r, g, b, mass) #?
         self.m_radius = radius
     
     def setMass(self, mass):

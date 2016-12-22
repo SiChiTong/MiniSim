@@ -156,6 +156,25 @@ class QTimelineEditor(QGraphicsView):
         self.m_keyFrames.insert(to, item)
 
 
+class QTimelineEditorDockWidget(QDockWidget):
+    def __init__(self, parent = None):
+        super(QTimelineEditorDockWidget, self).__init__("Timeline Editor", parent)
+        
+        self.m_scene = QGraphicsScene(-2000, 2000, 4000, 4000)
+        self.m_timelineEditor = QTimelineEditor(self.m_scene)
+        #Show effects
+        self.m_keyFrames = [15, 20, 23, 34]
+        for i in range(10):
+            keyFrame = i
+            self.m_keyFrames.append(keyFrame)
+        self.m_timelineEditor.setKeyFrames(self.m_keyFrames)
+        #Show effects
+
+        self.setWidget(self.m_timelineEditor)        
+        
+
+
+
 if __name__ == '__main__':
     import sys
     app = QApplication(sys.argv)
