@@ -15,7 +15,6 @@ from PyQt4.QtGui import *
 from PyQt4.QtOpenGL import QGLWidget
 from pworld import PWorld
 from pray import PRay
-from pcylinder import PCylinder
 from robot import Robot
 from ode_graphics import CGraphics
 from setcamerawidget import SetCameraWidget
@@ -100,14 +99,14 @@ class GLWidget(QGLWidget):
         
     def initializeGL(self):
         self.m_pworld.glinit()
+        glutInit([])
+    
         self.m_g.initScene(self.width(), self.height(), 0, 0.7, 1)
 
 
     def paintGL(self):
 
         self.m_g.enableGraphics()
-
-        self.m_g.setViewpoint(self.m_g.m_view_xyz, (self.m_xRot/16.0, self.m_yRot/16.0, self.m_zRot/16.0))        
         
         self.m_g.initScene(self.width(), self.height(), 0, 0.7, 1)
         
@@ -269,16 +268,16 @@ class GLWidget(QGLWidget):
             self.m_g.lookAt(0, 0, 0)
             self.updateGL()
         if (event.key() == Qt.Key_Up):
-            self.m_g.cameraMotion(1, 0, 0.05)
+            self.m_g.cameraMotion(2, 0, 0.5)
             self.updateGL()
         if (event.key() == Qt.Key_Down):
-            self.m_g.cameraMotion(1, 0, -0.05)
+            self.m_g.cameraMotion(2, 0, -0.5)
             self.updateGL()
         if (event.key() == Qt.Key_Left):
-            self.m_g.cameraMotion(2, -0.05, 0)
+            self.m_g.cameraMotion(1, -0.5, 0)
             self.updateGL()
         if (event.key() == Qt.Key_Right):
-            self.m_g.cameraMotion(2, 0.05, 0)
+            self.m_g.cameraMotion(1, 0.5, 0)
             self.updateGL()
 
             
@@ -296,44 +295,35 @@ class GLWidget(QGLWidget):
         self.updateGL()
 
 
-    def setXRotation(self, angle):
+    def setShoulderRotation(self, angle):
         angle = self.normalizeAngle(angle)
-        if angle != self.m_xRot:
-            self.m_xRot = angle
-            self.xRotationChanged.emit(angle)
+        if angle != self.m_shoulderRot:
+            self.m_shoulderRot = angle
+            self.m_robot.m_leftShoulder.
+            self.m_pworld.m_world.
             self.updateGL()
 
-    def setYRotation(self, angle):
+    def setElbowRotation(self, angle):
         angle = self.normalizeAngle(angle)
-        if angle != self.m_yRot:
-            self.m_yRot = angle
-            self.yRotationChanged.emit(angle)
+        if angle != self.m_elbowRot:
+            self.m_elbowRot = angle
+            self.elbowRotationChanged.emit(angle)
             self.updateGL()
 
-    def setZRotation(self, angle):
-        angle = self.normalizeAngle(angle)
-        if angle != self.m_zRot:
-            self.m_zRot = angle
-            self.zRotationChanged.emit(angle)
-            self.updateGL()
 
 
             
-class GLDockWidget(QDockWidget):
+class WrappedGLWidget(QWidget):
     def __init__(self, parent = None):
-        super(GLDockWidget, self).__init__(parent)
+        super(WrappedGLWidget, self).__init__(parent)
         self.m_glWidget = GLWidget(self)
 
-        self.m_xSlider = self.createSlider()
-        self.m_ySlider = self.createSlider()
-        self.m_zSlider = self.createSlider()
+        self.m_shoulderSlider = self.createSlider()
+        self.m_elbowSlider = self.createSlider()
 
-        self.m_xSlider.valueChanged.connect(self.m_glWidget.setXRotation)
-        self.m_glWidget.xRotationChanged.connect(self.m_xSlider.setValue)
-        self.m_ySlider.valueChanged.connect(self.m_glWidget.setYRotation)
-        self.m_glWidget.yRotationChanged.connect(self.m_ySlider.setValue)
-        self.m_zSlider.valueChanged.connect(self.m_glWidget.setZRotation)
-        self.m_glWidget.zRotationChanged.connect(self.m_zSlider.setValue)
+        self.m_shoulderSlider.valueChanged.connect(self.m_glWidget.setShoulderRotation)
+        self.m_elbowSlider.valueChanged.connect(self.m_glWidget.setElbowRotation)
+
 
         mainLayout = QHBoxLayout()
         mainLayout.addWidget(self.m_glWidget)
@@ -341,17 +331,12 @@ class GLDockWidget(QDockWidget):
         mainLayout.addWidget(self.m_ySlider)
         mainLayout.addWidget(self.m_zSlider)
 
-        tmpWidget = QWidget(self)
-        tmpWidget.setLayout(mainLayout)
-        tmpWidget.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.setLayout(mainLayout)
+        self.resize(1000, 700)
 
-
-        self.setWidget = tmpWidget
-
-
-        self.m_xSlider.setValue(15 * 16)
-        self.m_ySlider.setValue(345 * 16)
-        self.m_zSlider.setValue(0 * 16)
+        #self.m_xSlider.setValue(15 * 16)
+        #self.m_ySlider.setValue(345 * 16)
+        #self.m_zSlider.setValue(0 * 16)
 
         self.setWindowTitle("Hello GL")
 
@@ -369,6 +354,6 @@ class GLDockWidget(QDockWidget):
 if __name__=='__main__':  
     import sys
     app = QApplication(sys.argv)  
-    widget = GLWidget()
+    widget = WrappedGLWidget()
     widget.show()  
     sys.exit(app.exec_())  

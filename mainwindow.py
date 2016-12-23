@@ -8,7 +8,7 @@ Created on Wed Dec 21 18:06:18 2016
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
-from glwidget import GLDockWidget
+from glwidget import WrappedGLWidget
 from robotwidget import RobotDockWidget
 from qtimelineeditor import QTimelineEditorDockWidget
 
@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
         self.m_workspace = QWorkspace(self)
         self.setCentralWidget(self.m_workspace)
         
-        self.m_glDockWidget = GLDockWidget(self)
+        self.m_glDockWidget = WrappedGLWidget(self)
         self.m_glDockWidget.setWindowTitle("Simulator")
         self.m_glDockWidget.m_glWidget.resize(512, 512)
         

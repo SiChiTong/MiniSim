@@ -30,7 +30,7 @@ class PWorld(QObject):
         self.m_cgraphics = g
         
         # create a plane geom to simulate a floor
-        floor = ode.GeomPlane(self.m_space, (0, 1, 0), 0)
+        #floor = ode.GeomPlane(self.m_space, (0, 1, 0), 0)
         
     def setGravity(self, gravity):
         self.m_world.setGravity(0, 0, -gravity)
